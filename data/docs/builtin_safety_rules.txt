@@ -1,0 +1,29 @@
+
+WAREHOUSE ROBOT SAFETY REGULATIONS
+
+1. PERSONNEL SAFETY ZONES
+- Robots must stop immediately when a person is detected within 1 meter.
+- Speed must be reduced to 0.3 m/s when a person is detected within 3 meters.
+- Audible warning must activate when a person is detected within 5 meters.
+- Robot must not resume movement until the safety zone is clear.
+
+2. VEHICLE INTERACTION
+- Maintain minimum 2 meter clearance from forklifts and trucks at all times.
+- Yield to all manned vehicles at intersections.
+- Never cross paths with moving vehicles without ACS confirmation.
+
+3. OBSTACLE RESPONSE PROTOCOL
+- CRITICAL (risk score >= 8): Immediate full stop. Alert human operator via ACS.
+- WARNING (risk score 4-7): Reduce speed 50%, activate warning lights, request reroute.
+- CAUTION (risk score 1-3): Reduce speed 20%, increase sensor scan frequency.
+- SAFE (risk score 0): Normal operation continues.
+
+4. REROUTING RULES
+- If primary path blocked for more than 10 seconds, request alternate route from ACS.
+- Never attempt to navigate around a person — always wait or reroute via ACS.
+- Log all obstacle events with timestamp and object type for ACS review.
+
+5. EMERGENCY PROCEDURES
+- If LLM or ACS connection lost, default to STOP and wait for manual override.
+- Hardware e-stop takes priority over all software commands.
+- All critical events must be logged even if ACS is offline.

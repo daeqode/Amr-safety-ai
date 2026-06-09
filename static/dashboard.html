@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BEM Robotics ACS Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0e1a;
+      color: #e0e6f0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background: #0d1225;
+      border-bottom: 1px solid #1e2d4a;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 16px; font-weight: 600; color: #4a9eff; letter-spacing: 1px; }
+    header h1 span { color: #e0e6f0; }
+    .header-right { display: flex; align-items: center; gap: 16px; font-size: 12px; color: #6b7a99; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00c853; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      grid-template-rows: 1fr 200px;
+      gap: 12px;
+      padding: 12px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .panel {
+      background: #0d1225;
+      border: 1px solid #1e2d4a;
+      border-radius: 8px;
+      padding: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4a9eff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    #video-panel { grid-row: 1 / 2; grid-column: 1 / 2; position: relative; }
+    #video-feed { width: 100%; flex: 1; object-fit: contain; border-radius: 4px; background: #060910; }
+    #video-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #2a3a5a;
+      font-size: 13px;
+      gap: 8px;
+    }
+    #video-placeholder .icon { font-size: 40px; }
+    #alert-panel { grid-row: 1 / 2; grid-column: 2 / 3; }
+    .risk-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .risk-CRITICAL { background: #3d0f0f; color: #ff4444; border: 1px solid #ff4444; }
+    .risk-WARNING  { background: #3d2a00; color: #ffaa00; border: 1px solid #ffaa00; }
+    .risk-CAUTION  { background: #2a2d00; color: #dddd00; border: 1px solid #dddd00; }
+    .risk-SAFE     { background: #0a2a0a; color: #00c853; border: 1px solid #00c853; }
+    .action-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .action-STOP      { background: #ff4444; color: #fff; }
+    .action-REROUTE   { background: #ff8800; color: #fff; }
+    .action-SLOW_DOWN { background: #ffaa00; color: #000; }
+    .action-CONTINUE  { background: #00c853; color: #fff; }
+    .alert-message   { font-size: 13px; color: #c0cce0; margin-bottom: 10px; line-height: 1.5; }
+    .alert-reasoning { font-size: 11px; color: #6b7a99; line-height: 1.5; margin-bottom: 10px; }
+    .rag-ref { font-size: 11px; color: #4a9eff; background: #0a1a2a; padding: 6px 8px; border-radius: 4px; border-left: 2px solid #4a9eff; }
+    .objects-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .obj-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: #1a2540;
+      color: #8a9abb;
+      border: 1px solid #2a3a5a;
+    }
+    .obj-tag.person { border-color: #ff4444; color: #ff8888; }
+    .obj-tag.truck, .obj-tag.bus { border-color: #ffaa00; color: #ffcc66; }
+    #no-alert {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #2a3a5a;
+      font-size: 13px;
+      gap: 8px;
+    }
+    #history-panel { grid-row: 2 / 3; grid-column: 1 / 3; }
+    #history-list {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      flex: 1;
+      padding-bottom: 4px;
+    }
+    #history-list::-webkit-scrollbar { height: 4px; }
+    #history-list::-webkit-scrollbar-track { background: #0a0e1a; }
+    #history-list::-webkit-scrollbar-thumb { background: #2a3a5a; border-radius: 2px; }
+    .history-card {
+      flex-shrink: 0;
+      width: 200px;
+      background: #060910;
+      border: 1px solid #1e2d4a;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .history-card:hover { border-color: #2a4a6a; }
+    .history-card.selected { border-color: #4a9eff; }
+    .hc-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .hc-time { color: #6b7a99; }
+    .hc-msg { color: #8a9abb; line-height: 1.4; }
+    #empty-history { color: #2a3a5a; font-size: 12px; display: flex; align-items: center; }
+    #upload-btn {
+      margin-top: 8px;
+      background: #1a2540;
+      border: 1px dashed #2a3a5a;
+      color: #6b7a99;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    #upload-btn:hover { border-color: #4a9eff; color: #4a9eff; }
+    #file-input { display: none; }
+    #loading-overlay {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      border-radius: 8px;
+      z-index: 10;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #4a9eff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>BEM ROBOTICS <span>ACS Dashboard</span></h1>
+  <div class="header-right">
+    <div><span class="status-dot"></span>System Online</div>
+    <div id="header-time">--:--:--</div>
+    <div id="header-alerts">Alerts: 0</div>
+  </div>
+</header>
+
+<main>
+  <div class="panel" id="video-panel">
+    <div class="panel-title">📷 Camera Feed — AMR-01</div>
+    <div id="video-placeholder">
+      <div class="icon">📦</div>
+      <div>Upload an image or video frame to analyze</div>
+    </div>
+    <img id="video-feed" style="display:none;" alt="video feed"/>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div style="color:#4a9eff;font-size:13px;font-weight:500;">LLM Analyzing...</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*"/>
+    <button id="upload-btn" onclick="document.getElementById('file-input').click()">
+      📁 Upload Image to Analyze
+    </button>
+  </div>
+
+  <div class="panel" id="alert-panel">
+    <div class="panel-title">⚠️ Current Alert</div>
+    <div id="no-alert">
+      <div style="font-size:28px">✅</div>
+      <div>Awaiting analysis...</div>
+    </div>
+    <div id="alert-content" style="display:none; overflow-y:auto;">
+      <div id="risk-badge" class="risk-badge">SAFE</div>
+      <div id="action-badge" class="action-badge action-CONTINUE">CONTINUE</div>
+      <div id="alert-message" class="alert-message"></div>
+      <div id="alert-reasoning" class="alert-reasoning"></div>
+      <div id="rag-ref" class="rag-ref" style="display:none;"></div>
+      <div class="objects-list" id="objects-list"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="history-panel">
+    <div class="panel-title">📋 Alert History — click to review</div>
+    <div id="history-list">
+      <div id="empty-history">No alerts yet — upload an image to start</div>
+    </div>
+  </div>
+</main>
+
+<script>
+  setInterval(() => {
+    document.getElementById('header-time').textContent =
+      new Date().toLocaleTimeString('en-GB');
+  }, 1000);
+
+  let totalAlerts = 0;
+
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'alert') showAlert(msg.data);
+    if (msg.type === 'history') msg.alerts.forEach(showAlert);
+  };
+
+  document.getElementById('file-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = document.getElementById('video-feed');
+      const placeholder = document.getElementById('video-placeholder');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+
+    const b64 = await toBase64(file);
+    document.getElementById('upload-btn').textContent = '⏳ Analyzing...';
+    document.getElementById('upload-btn').disabled = true;
+    document.getElementById('loading-overlay').style.display = 'flex';
+
+    try {
+      const res = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: b64, robot_id: 'AMR-01' }),
+      });
+      const data = await res.json();
+      if (data.success) showAlert(data.alert);
+      else alert('Analysis failed: ' + data.error);
+    } catch (err) {
+      alert('Server error: ' + err);
+    } finally {
+      document.getElementById('upload-btn').textContent = '📁 Upload Image to Analyze';
+      document.getElementById('upload-btn').disabled = false;
+      document.getElementById('loading-overlay').style.display = 'none';
+      e.target.value = '';
+    }
+  });
+
+  function toBase64(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showAlert(alert) {
+    showAlertDetail(alert);
+    addHistory(alert);
+    totalAlerts++;
+    document.getElementById('header-alerts').textContent = `Alerts: ${totalAlerts}`;
+  }
+
+  function showAlertDetail(alert) {
+    document.getElementById('no-alert').style.display = 'none';
+    document.getElementById('alert-content').style.display = 'block';
+
+    const rl = alert.risk_level || 'SAFE';
+    const ac = alert.action || 'CONTINUE';
+
+    const rb = document.getElementById('risk-badge');
+    rb.textContent = rl;
+    rb.className = `risk-badge risk-${rl}`;
+
+    const ab = document.getElementById('action-badge');
+    ab.textContent = ac;
+    ab.className = `action-badge action-${ac}`;
+
+    document.getElementById('alert-message').textContent = alert.message || '';
+    document.getElementById('alert-reasoning').textContent = alert.reasoning || '';
+
+    const ragEl = document.getElementById('rag-ref');
+    if (alert.rag_reference) {
+      ragEl.textContent = '📖 ' + alert.rag_reference;
+      ragEl.style.display = 'block';
+    } else {
+      ragEl.style.display = 'none';
+    }
+
+    const ol = document.getElementById('objects-list');
+    ol.innerHTML = '';
+    (alert.objects || []).forEach(obj => {
+      const tag = document.createElement('span');
+      tag.className = `obj-tag ${obj.type}`;
+      tag.textContent = `${obj.type} · ${obj.distance.replace('_',' ')} · ${obj.position}`;
+      ol.appendChild(tag);
+    });
+  }
+
+  function addHistory(alert) {
+    const list = document.getElementById('history-list');
+    const empty = document.getElementById('empty-history');
+    if (empty) empty.remove();
+
+    const rl = alert.risk_level || 'SAFE';
+    const time = new Date(alert.timestamp).toLocaleTimeString('en-GB');
+
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    card.innerHTML = `
+      <div class="hc-top">
+        <span class="risk-badge risk-${rl}" style="font-size:10px;padding:2px 8px;">${rl}</span>
+        <span class="hc-time">${time}</span>
+      </div>
+      <div class="hc-msg">${(alert.message || '').slice(0, 80)}...</div>
+    `;
+
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.history-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      showAlertDetail(alert);
+    });
+
+    list.insertBefore(card, list.firstChild);
+  }
+</script>
+</body>
+</html>
